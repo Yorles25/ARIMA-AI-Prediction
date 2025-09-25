@@ -1,11 +1,17 @@
-FROM node:16
+version: '3.8'
 
-WORKDIR /app
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
 
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-EXPOSE 3000
-CMD ["npm", "start"]
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
