@@ -1,37 +1,115 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// Variable de configuración para la URL del backend.
+// Esto hace que la llamada a la API funcione correctamente desde el navegador del usuario
+// apuntando a la IP del servidor en el puerto del backend.
+const API_BASE_URL = `http://${window.location.hostname}:8000`;
+
 function App() {
-  const [data, setData] = useState([]);
+  // Estados para manejar los datos, la predicción, y el estado de carga/error.
+  const [historicalData, setHistoricalData] = useState([]);
   const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // useEffect para cargar los datos históricos cuando el componente se monta.
   useEffect(() => {
-    // Cargar datos históricos desde el backend
-    fetch('/api/data')
-      .then((res) => res.json())
-      .then((data) => setData(data.series));
-  }, []);
+    fetch(`${API_BASE_URL}/api/data`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('La respuesta de la red no fue exitosa');
+        }
+        return res.json();
+      })
+      .then(data => {
+        setHistoricalData(data); // Corregido: El API devuelve el array directamente.
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error al cargar datos históricos:", error);
+        setError("No se pudieron cargar los datos históricos. Verifique que el backend esté funcionando.");
+        setLoading(false);
+      });
+  }, []); // El array vacío asegura que esto se ejecute solo una vez.
 
+  // Función para manejar la solicitud de predicción.
   const handlePredict = () => {
-    // Llamar al endpoint de predicción
-    fetch('/api/predict')
-      .then((res) => res.json())
-      .then((pred) => setPrediction(pred.prediction));
+    // Limpiar predicción anterior y mostrar estado de carga si se desea
+    setPrediction(null);
+
+    const requestBody = {
+      model: "ARIMA",
+      numCandidates: 3
+    };
+
+    // Corregido: Se usa el método POST y se envía un body en formato JSON.
+    fetch(`${API_BASE_URL}/api/predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+      .then(res => res.json())
+      .then(pred => {
+        setPrediction(pred); // Corregido: Guarda el objeto de predicción completo.
+      })
+      .catch(error => {
+        console.error("Error al generar la predicción:", error);
+        setError("No se pudo generar la predicción.");
+      });
   };
+
+  // Renderizado condicional para mostrar mensajes de carga o error.
+  if (loading) return <div className="App"><h1>Cargando datos...</h1></div>;
+  if (error) return <div className="App"><h1 style={{color: 'red'}}>Error</h1><p>{error}</p></div>;
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>AI Prediction Dashboard</h1>
-        <button onClick={handlePredict}>Generate Prediction</button>
-        {prediction !== null && <h2>Predicted Value: {prediction}</h2>}
-        <h2>Historical Data</h2>
-        <ul>
-          {data.map((point, index) => (
-            <li key={index}>Period {point.x}: {point.y}</li>
-          ))}
-        </ul>
       </header>
+      <main>
+        <section className="prediction-section">
+          <h2>Generar Nueva Predicción</h2>
+          <button onClick={handlePredict}>Generate Prediction</button>
+          {prediction && (
+            <div className="prediction-result">
+              <h3>Resultado de la Predicción:</h3>
+              <p><strong>Modelo Utilizado:</strong> {prediction.modelUsed}</p>
+              <p><strong>Candidatos Sugeridos:</strong> {prediction.candidates.join(', ')}</p>
+              <p><strong>Puntuación de Confianza:</strong> {prediction.confidenceScore}</p>
+            </div>
+          )}
+        </section>
+
+        <section className="data-section">
+          <h2>Historical Data</h2>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>FECHA</th>
+                  <th>MD</th>
+                  <th>TD</th>
+                  <th>NC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historicalData.map((row, index) => (
+                  <tr key={index}>
+                    <td>{row.FECHA}</td>
+                    <td>{row.MD}</td>
+                    <td>{row.TD}</td>
+                    <td>{row.NC}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
