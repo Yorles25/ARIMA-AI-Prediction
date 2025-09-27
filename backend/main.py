@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 app = FastAPI()
 
 # --- BASE DE DATOS EN MEMORIA (Tus datos históricos reales) ---
-
 historical_data = [
     {"FECHA": "2024-10-31", "MD": 97, "TD": 85, "NC": 47},
     {"FECHA": "2024-10-30", "MD": 59, "TD": 44, "NC": 74},
@@ -40,16 +39,10 @@ historical_data = [
     {"FECHA": "2024-10-01", "MD": 54, "TD": 35, "NC": 26}
 ]
 
-
-# --- MODELOS DE DATOS PARA LAS PETICIONES (INPUTS) ---
-
 class PredictionRequest(BaseModel):
     model: str = Field(..., example="ARIMA")
     numCandidates: int = Field(..., ge=1, example=3)
     # Puedes añadir más campos como hyperparameters y dateRange aquí en el futuro
-
-
-# --- ENDPOINTS DE LA API ---
 
 @app.get("/")
 def read_root():
@@ -71,12 +64,10 @@ def generate_prediction(request: PredictionRequest):
 
     # --- AQUÍ IRÁ LA LÓGICA DEL MODELO DE IA REAL ---
     # Por ahora, devolvemos una respuesta fija de ejemplo.
-    
     prediction_result = {
         "modelUsed": request.model,
         "candidates": [42, 53, 98],
         "confidenceScore": 0.85,
         "message": f"Predicción de ejemplo generada para el modelo {request.model}."
     }
-    
     return prediction_result
