@@ -1,10 +1,19 @@
+"""
+AI Prediction Dashboard - Backend (FastAPI)
+-------------------------------------------
+Expone una API para obtener datos históricos y realizar predicciones (simuladas).
+Actualmente utiliza una "base de datos" en memoria (lista de diccionarios).
+Estructura lista para crecer: puedes conectar a PostgreSQL y añadir modelos ML reales.
+"""
+
 from fastapi import FastAPI
 from typing import List, Dict, Any
 from pydantic import BaseModel, Field
 
+# Instancia de FastAPI para la app
 app = FastAPI()
 
-# --- BASE DE DATOS EN MEMORIA (Tus datos históricos reales) ---
+# --- BASE DE DATOS EN MEMORIA (históricos reales de ejemplo) ---
 historical_data = [
     {"FECHA": "2024-10-31", "MD": 97, "TD": 85, "NC": 47},
     {"FECHA": "2024-10-30", "MD": 59, "TD": 44, "NC": 74},
@@ -39,18 +48,26 @@ historical_data = [
     {"FECHA": "2024-10-01", "MD": 54, "TD": 35, "NC": 26}
 ]
 
+# --- MODELOS DE DATOS PARA PETICIONES (entrada de predicción) ---
 class PredictionRequest(BaseModel):
     model: str = Field(..., example="ARIMA")
     numCandidates: int = Field(..., ge=1, example=3)
     # Puedes añadir más campos como hyperparameters y dateRange aquí en el futuro
 
+# --- ENDPOINTS DE LA API ---
+
 @app.get("/")
 def read_root():
+    """
+    Prueba de vida de la API.
+    """
     return {"message": "AI Prediction API está funcionando!"}
 
 @app.get("/api/data", response_model=List[Dict[str, Any]])
 def get_historical_data():
-    """Devuelve todos los datos históricos disponibles."""
+    """
+    Devuelve todos los datos históricos disponibles.
+    """
     return historical_data
 
 @app.post("/api/predict", response_model=Dict[str, Any])
@@ -62,12 +79,22 @@ def generate_prediction(request: PredictionRequest):
     print(f"Recibida petición para predecir con el modelo: {request.model}")
     print(f"Número de candidatos solicitados: {request.numCandidates}")
 
-    # --- AQUÍ IRÁ LA LÓGICA DEL MODELO DE IA REAL ---
-    # Por ahora, devolvemos una respuesta fija de ejemplo.
+    # --- Aquí iría la lógica de ML/IA real ---
     prediction_result = {
         "modelUsed": request.model,
-        "candidates": [42, 53, 98],
+        "candidates": [42, 53, 98][:request.numCandidates],
         "confidenceScore": 0.85,
         "message": f"Predicción de ejemplo generada para el modelo {request.model}."
     }
     return prediction_result
+
+# (Opcional) Habilitar CORS si el frontend se ejecuta en dominio/puerto diferente
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cambia esto en producción para mayor seguridad
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
