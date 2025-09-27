@@ -1,29 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// Variable de configuración para la URL del backend.
-// Esto hace que la llamada a la API funcione correctamente desde el navegador del usuario
-// apuntando a la IP del servidor en el puerto del backend.
 const API_BASE_URL = `http://${window.location.hostname}:8000`;
 
 function App() {
-  // Estados para manejar los datos, la predicción, y el estado de carga/error.
   const [historicalData, setHistoricalData] = useState([]);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // useEffect para cargar los datos históricos cuando el componente se monta.
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/data`)
       .then(res => {
-        if (!res.ok) {
-          throw new Error('La respuesta de la red no fue exitosa');
-        }
+        if (!res.ok) throw new Error('La respuesta de la red no fue exitosa');
         return res.json();
       })
       .then(data => {
-        setHistoricalData(data); // Corregido: El API devuelve el array directamente.
+        setHistoricalData(data);
         setLoading(false);
       })
       .catch(error => {
@@ -31,11 +24,9 @@ function App() {
         setError("No se pudieron cargar los datos históricos. Verifique que el backend esté funcionando.");
         setLoading(false);
       });
-  }, []); // El array vacío asegura que esto se ejecute solo una vez.
+  }, []);
 
-  // Función para manejar la solicitud de predicción.
   const handlePredict = () => {
-    // Limpiar predicción anterior y mostrar estado de carga si se desea
     setPrediction(null);
 
     const requestBody = {
@@ -43,25 +34,19 @@ function App() {
       numCandidates: 3
     };
 
-    // Corregido: Se usa el método POST y se envía un body en formato JSON.
     fetch(`${API_BASE_URL}/api/predict`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     })
       .then(res => res.json())
-      .then(pred => {
-        setPrediction(pred); // Corregido: Guarda el objeto de predicción completo.
-      })
+      .then(pred => setPrediction(pred))
       .catch(error => {
         console.error("Error al generar la predicción:", error);
         setError("No se pudo generar la predicción.");
       });
   };
 
-  // Renderizado condicional para mostrar mensajes de carga o error.
   if (loading) return <div className="App"><h1>Cargando datos...</h1></div>;
   if (error) return <div className="App"><h1 style={{color: 'red'}}>Error</h1><p>{error}</p></div>;
 
@@ -73,7 +58,7 @@ function App() {
       <main>
         <section className="prediction-section">
           <h2>Generar Nueva Predicción</h2>
-          <button onClick={handlePredict}>Generate Prediction</button>
+          <button onClick={handlePredict}>Generar Predicción</button>
           {prediction && (
             <div className="prediction-result">
               <h3>Resultado de la Predicción:</h3>
@@ -83,9 +68,8 @@ function App() {
             </div>
           )}
         </section>
-
         <section className="data-section">
-          <h2>Historical Data</h2>
+          <h2>Datos Históricos</h2>
           <div className="table-container">
             <table>
               <thead>
